@@ -187,9 +187,3 @@ This software is provided "as is" without any warranty. The authors are not resp
 - [BIP39: Mnemonic code for generating deterministic keys](https://github.com/bitcoin/bips/blob/master/bip-0039.mediawiki)
 - [BIP32: Hierarchical Deterministic Wallets](https://github.com/bitcoin/bips/blob/master/bip-0032.mediawiki)
 - [Bitcoin Developer Documentation](https://developer.bitcoin.org/)
-
-[1] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/11933922/ce66dfb7-839f-4eab-ad5b-9be5cd031549/english.txt
-[2] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/11933922/c0f0282c-b1a9-4c5a-bf76-9e0eda2d45d3/numtoword.sh
-[3] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/11933922/f3b1d2ea-2b37-4cd9-9da9-c9d09ce89652/privatekey.sh
-[4] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/11933922/c462772c-40ab-4a53-8fc1-a6ec04c149c7/random.sh
-[5] https://ppl-ai-file-upload.s3.amazonaws.com/web/direct-files/attachments/11933922/e7c2b4c1-5ca4-41ae-b3cd-5c2ae4211cb2/twelvenums.sh
