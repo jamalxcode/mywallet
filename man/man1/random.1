@@ -1,0 +1,153 @@
+.TH RANDOM 1 "July 2025" "MyWallet Toolkit 1.0" "User Commands"
+.SH NAME
+random \- Bitcoin mnemonic entropy generator and checksum calculator
+.SH SYNOPSIS
+.B random.sh
+[\fIFORMAT\fR] [\fIHEX_VALUE\fR]
+.SH DESCRIPTION
+.B random.sh
+is a Bitcoin mnemonic entropy generator that creates cryptographically secure random entropy for BIP39 mnemonic phrase generation. It supports multiple output formats and includes checksum calculation functionality for entropy validation.
+
+This tool generates 128-bit entropy suitable for creating 12-word BIP39 mnemonic phrases following the Bitcoin Improvement Proposal 39 standard. The entropy is generated using OpenSSL's cryptographically secure random number generator.
+
+.B WARNING:
+This tool is designed for educational and testing purposes only. Never use this script for production Bitcoin wallets or real funds. For actual Bitcoin storage, always use hardware wallets or certified software solutions.
+
+.SH OPTIONS
+.TP
+.B hex
+Generate 128-bit entropy in hexadecimal format (default). Outputs 32 hexadecimal characters representing 16 bytes of random data.
+.TP
+.B binary
+Generate 128-bit entropy in binary format. Outputs 128 binary digits (0s and 1s) representing the same entropy as hex format.
+.TP
+.B checksum \fIHEX_VALUE\fR
+Calculate the BIP39 checksum for the provided 128-bit hex entropy value. The hex value must be exactly 32 hexadecimal characters (0-9, a-f, A-F).
+
+.SH EXAMPLES
+.TP
+Generate random entropy in hexadecimal format:
+.B random.sh hex
+.br
+or simply:
+.B random.sh
+
+.TP
+Generate random entropy in binary format:
+.B random.sh binary
+
+.TP
+Calculate checksum for existing entropy:
+.B random.sh checksum a1b2c3d4e5f678901234567890123456
+
+.TP
+Complete workflow example:
+.nf
+# Generate entropy
+ENTROPY=$(./random.sh hex | tail -1)
+echo "Generated entropy: $ENTROPY"
+
+# Calculate checksum
+./random.sh checksum $ENTROPY
+.fi
+
+.SH OUTPUT
+.TP
+.B hex format
+Outputs a 32-character hexadecimal string representing 128 bits of entropy.
+Example: a1b2c3d4e5f678901234567890123456
+
+.TP
+.B binary format
+Outputs a 128-character binary string of 0s and 1s.
+Example: 10100001101100101100001111010100111001011111011001111000100100000001001000110100010101100111100010010000000100100011010001010110
+
+.TP
+.B checksum format
+Outputs the 4-bit checksum in binary format calculated from the SHA-256 hash of the input entropy.
+Example: Checksum (first 4 bits): 1010
+
+.SH TECHNICAL DETAILS
+.SS Entropy Generation
+The script uses OpenSSL's \fBrand\fR function to generate cryptographically secure random bytes. For hex format, it generates 16 random bytes and converts them to hexadecimal representation.
+
+.SS Checksum Calculation
+The checksum follows BIP39 specification:
+.IP 1. 4
+Take the SHA-256 hash of the entropy bytes
+.IP 2. 4
+Extract the first byte of the hash
+.IP 3. 4
+Convert to binary and take the first 4 bits
+.IP 4. 4
+These 4 bits serve as the checksum
+
+.SS Cross-Platform Compatibility
+The script includes cross-platform hash calculation support, automatically detecting and using available SHA-256 tools:
+.IP \(bu 4
+sha256sum (Linux)
+.IP \(bu 4
+shasum (macOS)
+.IP \(bu 4
+OpenSSL fallback
+
+.SH DEPENDENCIES
+.TP
+.B openssl
+Required for cryptographic random number generation and hash calculations
+.TP
+.B xxd
+Required for hexadecimal to binary conversions
+.TP
+.B sha256sum or shasum
+Required for SHA-256 hash calculation (automatically detected)
+
+.SH SECURITY CONSIDERATIONS
+.IP \(bu 4
+This tool should never be used for production Bitcoin wallets
+.IP \(bu 4
+Generated entropy should be used immediately and not stored
+.IP \(bu 4
+Run on air-gapped systems for maximum security during testing
+.IP \(bu 4
+Verify entropy quality using external tools when possible
+.IP \(bu 4
+The script includes strict error handling to prevent malformed output
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful execution
+.TP
+.B 1
+Missing dependencies, invalid arguments, or execution error
+
+.SH FILES
+.TP
+.I english.txt
+BIP39 English wordlist file (required for related tools in the toolkit)
+
+.SH STANDARDS
+.TP
+.B BIP39
+Mnemonic code for generating deterministic keys
+.TP
+.B RFC 4634
+SHA-256 cryptographic hash algorithm
+
+.SH SEE ALSO
+.BR twelvenums (1),
+.BR numtoword (1),
+.BR privatekey (1),
+.BR openssl (1),
+.BR xxd (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+

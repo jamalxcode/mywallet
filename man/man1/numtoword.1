@@ -1,0 +1,197 @@
+.TH NUMTOWORD 1 "July 2025" "MyWallet Toolkit 1.0" "User Commands"
+.SH NAME
+numtoword \- convert BIP39 word indices to mnemonic words
+.SH SYNOPSIS
+.B echo 'numbers' | numtoword.sh
+[\fIWORDLIST_FILE\fR]
+.br
+.B numtoword.sh
+[\fIWORDLIST_FILE\fR] < \fIinput_file\fR
+.SH DESCRIPTION
+.B numtoword.sh
+converts numeric indices (0-2047) to their corresponding words in the BIP39 wordlist. This is the final step in BIP39 mnemonic generation, transforming the numeric indices produced by \fBtwelvenums.sh\fR into human-readable mnemonic words.
+
+The script reads numeric indices from stdin, one number per line, and outputs the corresponding BIP39 words. Each number must be between 0 and 2047, corresponding to the 2048 words in the standard BIP39 English wordlist.
+
+The BIP39 wordlist is a carefully curated set of 2048 English words designed for mnemonic phrases. Each word is unique within the first four characters, making partial word entry possible while maintaining unambiguity.
+
+.SH ARGUMENTS
+.TP
+.B WORDLIST_FILE
+Optional path to the BIP39 wordlist file. If not provided, the script looks for \fIenglish.txt\fR in the current directory. Can also be set via the \fBWORDLIST_FILE\fR environment variable.
+
+.SH INPUT FORMAT
+The script expects numeric indices from stdin, one number per line. Each number must be:
+.IP \(bu 4
+An integer between 0 and 2047 (inclusive)
+.IP \(bu 4
+On its own line
+.IP \(bu 4
+Free of leading/trailing whitespace (automatically trimmed)
+
+Empty lines are automatically skipped.
+
+Example input:
+.nf
+0
+1
+2047
+1234
+567
+.fi
+
+.SH OUTPUT FORMAT
+The script outputs the corresponding BIP39 words, one per line, in the same order as the input numbers.
+
+Example output for the above input:
+.nf
+abandon
+ability
+zoo
+remember
+end
+.fi
+
+.SH OPTIONS
+The script can be configured through:
+.TP
+.B Command line argument
+First argument specifies the wordlist file path
+.TP
+.B Environment variable
+\fBWORDLIST_FILE\fR environment variable specifies the wordlist file path
+.TP
+.B Default behavior
+Uses \fIenglish.txt\fR in the current directory if no other option is specified
+
+.SH EXAMPLES
+.TP
+Basic usage with default wordlist:
+.nf
+echo -e "0\\n1\\n2047" | ./numtoword.sh
+.fi
+
+.TP
+Using custom wordlist file:
+.nf
+echo -e "0\\n1\\n2047" | ./numtoword.sh /path/to/custom-wordlist.txt
+.fi
+
+.TP
+Using environment variable:
+.nf
+WORDLIST_FILE=/path/to/wordlist.txt echo -e "0\\n1\\n2047" | ./numtoword.sh
+.fi
+
+.TP
+Complete mnemonic generation workflow:
+.nf
+# Generate entropy and convert to indices
+./random.sh hex | tail -1 | ./twelvenums.sh > indices.txt
+
+# Convert indices to words
+cat indices.txt | ./numtoword.sh > mnemonic.txt
+
+# Display the mnemonic
+cat mnemonic.txt
+.fi
+
+.TP
+Pipeline usage:
+.nf
+./random.sh hex | tail -1 | ./twelvenums.sh | ./numtoword.sh
+.fi
+
+.SH WORDLIST FILE FORMAT
+The BIP39 wordlist file must contain exactly 2048 words, one per line, in the standard BIP39 order. The official English wordlist can be obtained from:
+
+https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/english.txt
+
+The wordlist format requirements:
+.IP \(bu 4
+Exactly 2048 lines
+.IP \(bu 4
+One word per line
+.IP \(bu 4
+No empty lines
+.IP \(bu 4
+Words in the standard BIP39 order
+.IP \(bu 4
+UTF-8 encoding
+
+.SH INPUT VALIDATION
+The script performs validation on each input number:
+.TP
+.B Range checking
+Numbers must be between 0 and 2047 (inclusive)
+.TP
+.B Format validation
+Input must be valid integers (no letters or special characters)
+.TP
+.B Error handling
+Invalid numbers are reported to stderr and skipped
+
+.SH ERROR HANDLING
+.TP
+.B Missing wordlist file
+If the specified wordlist file is not found, the script exits with an error message and suggests downloading the official wordlist.
+.TP
+.B Invalid numbers
+Numbers outside the valid range (0-2047) or non-numeric input are reported to stderr with the specific invalid value.
+.TP
+.B Empty input
+Empty lines in the input are automatically skipped without error.
+
+.SH TECHNICAL DETAILS
+.SS Word Lookup
+The script uses \fBsed\fR to extract the word at the specified line number from the wordlist file. Since BIP39 indices are 0-based but file line numbers are 1-based, the script adds 1 to each index before lookup.
+
+.SS Memory Efficiency
+The script processes input line by line, making it memory-efficient even for large inputs. It does not load the entire wordlist into memory.
+
+.SS Cross-Platform Compatibility
+The script uses standard POSIX shell features and common Unix utilities, ensuring compatibility across different operating systems.
+
+.SH ENVIRONMENT VARIABLES
+.TP
+.B WORDLIST_FILE
+Path to the BIP39 wordlist file. Overridden by command line argument if provided.
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful conversion completed
+.TP
+.B 1
+Missing wordlist file or other fatal error
+
+.SH FILES
+.TP
+.I english.txt
+Default BIP39 English wordlist file (must be in current directory)
+.TP
+.I /path/to/custom-wordlist.txt
+Alternative wordlist file location
+
+.SH STANDARDS
+.TP
+.B BIP39
+Mnemonic code for generating deterministic keys - defines the standard wordlist and encoding
+
+.SH SEE ALSO
+.BR random (1),
+.BR twelvenums (1),
+.BR privatekey (1),
+.BR sed (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+Invalid numbers in the input stream are reported to stderr but do not cause the script to exit, allowing processing of mixed valid/invalid input.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+

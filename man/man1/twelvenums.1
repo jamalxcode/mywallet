@@ -1,0 +1,187 @@
+.TH TWELVENUMS 1 "July 2025" "MyWallet Toolkit 1.0" "User Commands"
+.SH NAME
+twelvenums \- convert hex entropy to BIP39 mnemonic word indices
+.SH SYNOPSIS
+.B echo 'hex_entropy' | twelvenums.sh
+.SH DESCRIPTION
+.B twelvenums.sh
+converts 128-bit hexadecimal entropy into twelve decimal numbers that correspond to BIP39 wordlist indices. This is a crucial step in the BIP39 mnemonic generation process, transforming raw entropy into indices that can be mapped to mnemonic words.
+
+The script takes exactly 32 hexadecimal characters (representing 128 bits of entropy) as input via stdin and outputs 12 decimal numbers ranging from 0 to 2047. Each number corresponds to a word position in the BIP39 wordlist.
+
+The conversion process follows the BIP39 specification exactly:
+.IP 1. 4
+Convert 128-bit hex entropy to binary
+.IP 2. 4
+Calculate SHA-256 hash of the entropy
+.IP 3. 4
+Extract first 4 bits of hash as checksum
+.IP 4. 4
+Append checksum to entropy (132 bits total)
+.IP 5. 4
+Split into 12 groups of 11 bits each
+.IP 6. 4
+Convert each 11-bit group to decimal (0-2047)
+
+.SH INPUT FORMAT
+The script expects exactly 32 lowercase hexadecimal characters (0-9, a-f) representing 128 bits of entropy. Input is read from stdin and should contain no spaces or other characters.
+
+Valid input example: a1b2c3d4e5f678901234567890123456
+
+.SH OUTPUT FORMAT
+The script outputs exactly 12 decimal numbers, one per line, each ranging from 0 to 2047. These numbers correspond to indices in the BIP39 wordlist.
+
+Example output:
+.nf
+1234
+567
+890
+123
+456
+789
+012
+345
+678
+901
+234
+567
+.fi
+
+.SH OPTIONS
+The script accepts the following environment variables:
+.TP
+.B DEBUG=1
+Enable verbose debug output to stderr. Shows intermediate calculations including binary conversions, hash values, and bit groupings.
+
+.SH EXAMPLES
+.TP
+Basic usage with piped input:
+.B echo 'a1b2c3d4e5f678901234567890123456' | ./twelvenums.sh
+
+.TP
+Using with random entropy generator:
+.nf
+./random.sh hex | tail -1 | ./twelvenums.sh
+.fi
+
+.TP
+Debug mode for troubleshooting:
+.nf
+DEBUG=1 echo 'a1b2c3d4e5f678901234567890123456' | ./twelvenums.sh
+.fi
+
+.TP
+Complete workflow example:
+.nf
+# Generate entropy
+ENTROPY=$(./random.sh hex | tail -1)
+
+# Convert to indices
+echo "$ENTROPY" | ./twelvenums.sh > indices.txt
+
+# View the indices
+cat indices.txt
+.fi
+
+.SH TECHNICAL DETAILS
+.SS Binary Conversion
+The script converts each hexadecimal character to its 4-bit binary representation using the \fBbc\fR calculator. Hexadecimal characters are converted to uppercase before processing to ensure compatibility with \fBbc\fR.
+
+.SS Checksum Calculation
+Following BIP39 specification:
+.IP 1. 4
+Calculate SHA-256 hash of the raw entropy bytes
+.IP 2. 4
+Convert first byte of hash to binary
+.IP 3. 4
+Extract first 4 bits as checksum
+.IP 4. 4
+Append to 128-bit entropy for 132 total bits
+
+.SS Bit Grouping
+The 132-bit string (128 entropy + 4 checksum) is split into exactly 12 groups of 11 bits each. Each 11-bit group represents a number from 0 to 2047 (2^11 - 1), matching the BIP39 wordlist size.
+
+.SS Error Handling
+The script includes comprehensive error checking:
+.IP \(bu 4
+Input validation for exact 32 hex characters
+.IP \(bu 4
+Character validation (only 0-9, a-f allowed)
+.IP \(bu 4
+Binary length validation at each step
+.IP \(bu 4
+Final output validation (exactly 12 numbers)
+
+.SH DEPENDENCIES
+.TP
+.B xxd
+Required for hexadecimal to binary data conversion
+.TP
+.B bc
+Required for arbitrary precision arithmetic and base conversions
+.TP
+.B sha256sum or shasum
+Required for SHA-256 hash calculation (automatically detected)
+
+.SH ENVIRONMENT VARIABLES
+.TP
+.B DEBUG
+Set to 1 to enable verbose debug output showing intermediate calculations
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful conversion completed
+.TP
+.B 1
+Invalid input format, missing dependencies, or calculation error
+
+.SH INPUT VALIDATION
+The script performs strict input validation:
+.IP \(bu 4
+Must be exactly 32 characters long
+.IP \(bu 4
+Must contain only hexadecimal characters (0-9, a-f)
+.IP \(bu 4
+Input is automatically converted to lowercase
+.IP \(bu 4
+Whitespace is stripped from input
+
+.SH ERROR MESSAGES
+.TP
+.B "Error: No input provided"
+No data was received via stdin
+.TP
+.B "Error: Input must be exactly 32 lowercase hex characters"
+Input length or character validation failed
+.TP
+.B "Error: Expected 132 bits, got X"
+Internal calculation error in binary conversion
+.TP
+.B "Error: Group X has Y bits instead of 11"
+Bit grouping validation failed
+
+.SH STANDARDS
+.TP
+.B BIP39
+Mnemonic code for generating deterministic keys
+.TP
+.B RFC 4634
+SHA-256 cryptographic hash algorithm
+
+.SH SEE ALSO
+.BR random (1),
+.BR numtoword (1),
+.BR privatekey (1),
+.BR bc (1),
+.BR xxd (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+

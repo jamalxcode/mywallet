@@ -1,0 +1,239 @@
+.TH PRIVATEKEY 1 "July 2025" "MyWallet Toolkit 1.0" "User Commands"
+.SH NAME
+privatekey \- derive BIP32 master private key from BIP39 mnemonic phrase
+.SH SYNOPSIS
+.B privatekey.sh
+.SH DESCRIPTION
+.B privatekey.sh
+derives a BIP32 master private key and chain code from a BIP39 mnemonic phrase. This script implements the complete BIP39 to BIP32 key derivation process, converting human-readable mnemonic words into cryptographic keys suitable for Bitcoin wallet operations.
+
+The script performs a two-stage derivation process:
+.IP 1. 4
+BIP39 seed derivation using PBKDF2-HMAC-SHA512
+.IP 2. 4
+BIP32 master key derivation using HMAC-SHA512
+
+This tool is designed for educational and testing purposes only and should never be used with real Bitcoin funds or production wallets.
+
+.B CRITICAL WARNING:
+This script handles sensitive cryptographic material. Never use it for production Bitcoin wallets or real funds. Always use hardware wallets or certified software for actual Bitcoin storage.
+
+.SH INTERACTIVE OPERATION
+The script operates interactively, prompting the user for:
+.TP
+.B Mnemonic phrase
+12, 15, 18, 21, or 24 BIP39 words separated by spaces
+.TP
+.B Optional passphrase
+Additional security passphrase (can be empty)
+
+All input is validated before processing to ensure compliance with BIP39 standards.
+
+.SH INPUT VALIDATION
+.SS Mnemonic Validation
+The script performs comprehensive mnemonic validation:
+.IP \(bu 4
+Word count must be 12, 15, 18, 21, or 24 words
+.IP \(bu 4
+Each word must exist in the BIP39 English wordlist
+.IP \(bu 4
+Case-insensitive input (automatically normalized to lowercase)
+.IP \(bu 4
+Whitespace normalization
+
+.SS Wordlist Verification
+The script requires the BIP39 English wordlist file (\fIenglish.txt\fR) to be present in the current directory for word validation.
+
+.SH OUTPUT
+The script produces the following outputs:
+.TP
+.B BIP39 Seed
+512-bit (64-byte) seed derived from the mnemonic and passphrase using PBKDF2-HMAC-SHA512 with 2048 iterations
+.TP
+.B BIP32 Master Private Key
+256-bit (32-byte) master private key derived from the first 32 bytes of the HMAC-SHA512 output
+.TP
+.B BIP32 Chain Code
+256-bit (32-byte) chain code derived from the last 32 bytes of the HMAC-SHA512 output
+
+All outputs are displayed in hexadecimal format.
+
+Example output:
+.nf
+🔋 BIP39 Seed (64 bytes / 512 bits):
+1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+
+🔑 BIP32 Master Private Key (first 32 bytes):
+1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef
+
+🔗 BIP32 Chain Code (next 32 bytes):
+fedcba0987654321fedcba0987654321fedcba0987654321fedcba0987654321
+.fi
+
+.SH TECHNICAL DETAILS
+.SS BIP39 Seed Derivation
+The seed derivation follows BIP39 specification exactly:
+.IP 1. 4
+Normalize mnemonic to lowercase with single spaces
+.IP 2. 4
+Create salt by prepending "mnemonic" to the passphrase
+.IP 3. 4
+Apply PBKDF2-HMAC-SHA512 with 2048 iterations
+.IP 4. 4
+Output 64 bytes (512 bits) of key material
+
+.SS BIP32 Master Key Derivation
+The master key derivation follows BIP32 specification:
+.IP 1. 4
+Use the 64-byte BIP39 seed as input data
+.IP 2. 4
+Apply HMAC-SHA512 with key "Bitcoin seed"
+.IP 3. 4
+Split 64-byte output: first 32 bytes = private key, last 32 bytes = chain code
+.IP 4. 4
+Validate private key is within valid range (non-zero, less than curve order)
+
+.SS Cryptographic Requirements
+The script requires OpenSSL 3.x for proper PBKDF2 and HMAC operations:
+.IP \(bu 4
+Homebrew OpenSSL 3.x installation on macOS
+.IP \(bu 4
+Support for KDF (Key Derivation Function) operations
+.IP \(bu 4
+HMAC-SHA512 digest support
+
+.SH DEPENDENCIES
+.TP
+.B OpenSSL 3.x
+Required for PBKDF2-HMAC-SHA512 and HMAC-SHA512 operations. Must be Homebrew version on macOS, not system LibreSSL.
+.TP
+.B xxd
+Required for hexadecimal data conversion and formatting
+.TP
+.B awk
+Required for text processing and output formatting
+.TP
+.B grep
+Required for wordlist validation and pattern matching
+.TP
+.B english.txt
+BIP39 English wordlist file must be present in current directory
+
+.SH INSTALLATION REQUIREMENTS
+.SS macOS Setup
+.nf
+# Install Homebrew OpenSSL 3.x
+brew install openssl
+
+# Verify installation
+/opt/homebrew/bin/openssl version
+.fi
+
+.SS Linux Setup
+Most Linux distributions include compatible OpenSSL versions by default.
+
+.SH SECURITY CONSIDERATIONS
+.IP \(bu 4
+Never use this script for production Bitcoin wallets
+.IP \(bu 4
+Run on air-gapped systems for maximum security during testing
+.IP \(bu 4
+Clear terminal history after use
+.IP \(bu 4
+Ensure secure deletion of any temporary files
+.IP \(bu 4
+Verify OpenSSL version and cryptographic implementation
+.IP \(bu 4
+Use hardware wallets for real Bitcoin storage
+
+.SH ERROR HANDLING
+.TP
+.B OpenSSL Version Check
+Script verifies OpenSSL 3.x availability and exits if LibreSSL or older versions are detected
+.TP
+.B Dependency Validation
+All required commands are checked before execution
+.TP
+.B Input Validation
+Comprehensive validation of mnemonic word count and wordlist membership
+.TP
+.B Cryptographic Validation
+Output length validation ensures proper key derivation
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful key derivation completed
+.TP
+.B 1
+Missing dependencies, invalid input, or cryptographic operation failure
+
+.SH FILES
+.TP
+.I ./english.txt
+BIP39 English wordlist file (required, must be in current directory)
+.TP
+.I /opt/homebrew/bin/openssl
+Primary OpenSSL 3.x location on macOS (Homebrew)
+.TP
+.I /usr/local/bin/openssl
+Alternative OpenSSL 3.x location on macOS
+
+.SH ENVIRONMENT VARIABLES
+No environment variables are used by this script. All configuration is handled through interactive prompts.
+
+.SH EXAMPLES
+.TP
+Basic usage:
+.nf
+./privatekey.sh
+# Enter mnemonic when prompted: abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about
+# Enter passphrase when prompted (or press Enter for none)
+.fi
+
+.TP
+Complete workflow from entropy generation:
+.nf
+# Generate entropy
+./random.sh hex | tail -1 > entropy.txt
+
+# Convert to mnemonic
+cat entropy.txt | ./twelvenums.sh | ./numtoword.sh > mnemonic.txt
+
+# Derive private key
+./privatekey.sh
+# Paste mnemonic from mnemonic.txt when prompted
+.fi
+
+.SH STANDARDS
+.TP
+.B BIP39
+Mnemonic code for generating deterministic keys
+.TP
+.B BIP32
+Hierarchical Deterministic (HD) Wallets
+.TP
+.B RFC 2898
+PBKDF2: Password-Based Key Derivation Function 2
+.TP
+.B RFC 2104
+HMAC: Keyed-Hashing for Message Authentication
+
+.SH SEE ALSO
+.BR random (1),
+.BR twelvenums (1),
+.BR numtoword (1),
+.BR openssl (1),
+.BR xxd (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+The script requires specific OpenSSL 3.x features and may not work with older OpenSSL versions or LibreSSL implementations.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
