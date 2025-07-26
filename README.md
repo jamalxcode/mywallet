@@ -42,6 +42,30 @@ cd bitcoin-cli-wallet
 chmod +x *.sh
 ```
 
+## Quick Start
+
+Generate a complete mnemonic phrase with a single command:
+
+```
+./random.sh | tail -1 | ./twelvenums.sh | ./numtoword.sh
+```
+
+This pipeline:
+1. Generates random entropy using `random.sh`
+2. Converts entropy to BIP39 indices with `twelvenums.sh`
+3. Outputs the 12-word mnemonic phrase using `numtoword.sh`
+
+**Example output:**
+```
+abandon ability able about above absent absorb abstract absurd abuse access accident
+```
+
+### Prerequisites
+Make sure all scripts are executable:
+```
+chmod +x random.sh twelvenums.sh numtoword.sh
+```
+
 ## Usage
 
 ### 1. Generate Entropy
