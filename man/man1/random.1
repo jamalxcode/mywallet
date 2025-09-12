@@ -1,8 +1,11 @@
-.TH RANDOM 1 "July 2025" "MyWallet Toolkit 1.0" "User Commands"
+.TH RANDOM 1 "September 2025" "MyWallet Toolkit 2.0" "User Commands"
 .SH NAME
 random \- Bitcoin mnemonic entropy generator and checksum calculator
 .SH SYNOPSIS
 .B random.sh
+.RB [ \-q ]
+.RB [ \-v ]
+.RB [ \-h ]
 [\fIFORMAT\fR] [\fIHEX_VALUE\fR]
 .SH DESCRIPTION
 .B random.sh
@@ -14,6 +17,15 @@ This tool generates 128-bit entropy suitable for creating 12-word BIP39 mnemonic
 This tool is designed for educational and testing purposes only. Never use this script for production Bitcoin wallets or real funds. For actual Bitcoin storage, always use hardware wallets or certified software solutions.
 
 .SH OPTIONS
+.TP
+.B \-q
+Quiet mode. Suppress warnings and informational output.
+.TP
+.B \-v
+Verbose mode. Show progress and processing steps.
+.TP
+.B \-h
+Show help message and exit.
 .TP
 .B hex
 Generate 128-bit entropy in hexadecimal format (default). Outputs 32 hexadecimal characters representing 16 bytes of random data.

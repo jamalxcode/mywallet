@@ -1,0 +1,202 @@
+.TH KEYRING-SECURE 1 "September 2025" "MyWallet Toolkit 2.0" "User Commands"
+.SH NAME
+keyring-secure \- production-hardened secure private key management daemon
+.SH SYNOPSIS
+.B keyring-secure.sh
+.RB [ \-q ]
+.RB [ \-v ]
+.RB [ \-a
+.IR action ]
+.RB [ \-l
+.IR label ]
+.RB [ \-t
+.IR timeout ]
+.RB [ \-h ]
+.SH DESCRIPTION
+.B keyring-secure.sh
+is a production-hardened secure keyring daemon that manages Bitcoin private keys in memory with automatic timeout and comprehensive security features. It implements defense-in-depth security with multiple protection layers against various attack vectors.
+
+The keyring daemon stores private keys only in secure memory (shared memory when available), never writing them to disk. Keys are automatically expired after a configurable timeout period and are securely wiped from memory using multiple-pass deletion.
+
+.B PRODUCTION SECURITY FEATURES:
+.IP \(bu 4
+Cryptographically secure 256-bit session IDs
+.IP \(bu 4
+Shared memory storage (/dev/shm when available)
+.IP \(bu 4
+Multiple-pass secure deletion (3 passes with random data)
+.IP \(bu 4
+Atomic file operations with exclusive locking
+.IP \(bu 4
+Comprehensive input validation and sanitization
+.IP \(bu 4
+Race condition prevention with proper synchronization
+.IP \(bu 4
+Memory clearing on timeout/exit with cleanup handlers
+
+.SH OPTIONS
+.TP
+.B \-q
+Quiet mode. Suppress informational output.
+.TP
+.B \-v
+Verbose mode. Show detailed operations and security status.
+.TP
+.B \-a \fIaction\fR
+Specify action to perform. Available actions:
+.RS
+.TP
+.B status
+Show keyring daemon status (default)
+.TP
+.B auth
+Authenticate and store private key in memory
+.TP
+.B get
+Retrieve stored private key (for scripts)
+.TP
+.B clear
+Clear stored keys and reset timeout
+.TP
+.B kill
+Stop keyring daemon
+.RE
+.TP
+.B \-l \fIlabel\fR
+Key label/identifier (alphanumeric + underscore, max 32 chars, default: "default")
+.TP
+.B \-t \fItimeout\fR
+Timeout in seconds (1-300, default: 60)
+.TP
+.B \-h
+Show help message and exit.
+
+.SH ACTIONS
+.TP
+.B status
+Display current daemon status including number of cached keys, time remaining, and security configuration. Shows whether secure storage (tmpfs) is active.
+.TP
+.B auth
+Prompt for private key and store it securely in memory. The key is validated for format correctness (64 hexadecimal characters) before storage.
+.TP
+.B get
+Retrieve a previously stored private key. Used by other scripts in the toolkit. Returns empty if key expired or not found.
+.TP
+.B clear
+Immediately clear all cached keys and reset timeout. Keys are securely wiped with multiple passes of random data.
+.TP
+.B kill
+Stop the keyring daemon and perform complete cleanup of all secure storage areas.
+
+.SH SECURITY ARCHITECTURE
+.SS Memory Protection
+The keyring uses multiple layers of memory protection:
+.IP \(bu 4
+Shared memory storage (/dev/shm) when available for RAM-only operations
+.IP \(bu 4
+Secure file permissions (600/700) for all temporary files
+.IP \(bu 4
+Multiple-pass secure deletion using random data overwriting
+.IP \(bu 4
+Automatic memory clearing on process exit or signal handling
+
+.SS Input Validation
+All inputs undergo comprehensive validation:
+.IP \(bu 4
+Label names restricted to alphanumeric characters plus underscore and hyphen
+.IP \(bu 4
+Maximum label length enforced (32 characters)
+.IP \(bu 4
+Private key format validation (exactly 64 hexadecimal characters)
+.IP \(bu 4
+Timeout bounds checking (1-300 seconds)
+
+.SS Process Isolation
+Security isolation features include:
+.IP \(bu 4
+Cryptographically secure session IDs (256-bit entropy)
+.IP \(bu 4
+Process-specific temporary directories
+.IP \(bu 4
+Exclusive file locking to prevent race conditions
+.IP \(bu 4
+Signal handlers for proper cleanup on termination
+
+.SH EXAMPLES
+.TP
+Show keyring status:
+.B keyring-secure.sh -a status
+.TP
+Store private key with verbose output:
+.B keyring-secure.sh -v -a auth
+.TP
+Store key with custom label and timeout:
+.B keyring-secure.sh -a auth -l wallet1 -t 120
+.TP
+Retrieve stored key (for scripts):
+.B keyring-secure.sh -q -a get -l wallet1
+.TP
+Clear all cached keys:
+.B keyring-secure.sh -a clear
+.TP
+Stop daemon completely:
+.B keyring-secure.sh -a kill
+
+.SH ENVIRONMENT
+.TP
+.B BITCOIN_SESSION_ID
+Session identifier. Auto-generated with cryptographic entropy if not set.
+
+.SH FILES
+.TP
+.I /dev/shm/.bitcoin-keyring-*
+Secure shared memory storage directory (when available)
+.TP
+.I /tmp/.bitcoin-keyring-*
+Fallback temporary storage directory
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful execution
+.TP
+.B 1
+Authentication failed, invalid input, or system error
+
+.SH SECURITY CONSIDERATIONS
+.IP \(bu 4
+Never run as root - the script includes checks to prevent privilege escalation
+.IP \(bu 4
+Keys are stored only in memory, never written to persistent storage
+.IP \(bu 4
+Automatic timeout prevents long-term key exposure
+.IP \(bu 4
+Multiple security layers protect against various attack vectors
+.IP \(bu 4
+Production-hardened for enterprise environments
+
+.SH INTEGRATION
+This secure keyring integrates with other toolkit components:
+.IP \(bu 4
+.BR keyauth-secure (1)
+for authentication workflows
+.IP \(bu 4
+.BR send-secure (1)
+for secure transaction sending
+.IP \(bu 4
+All scripts that require private key access
+
+.SH SEE ALSO
+.BR keyauth-secure (1),
+.BR send-secure (1),
+.BR balance (1),
+.BR network (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written for the MyWallet Toolkit project with production-grade security enhancements.
+
+.SH COPYRIGHT
+This is free software with production security features; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

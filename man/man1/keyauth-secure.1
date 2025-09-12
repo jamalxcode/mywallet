@@ -1,0 +1,254 @@
+.TH KEYAUTH-SECURE 1 "September 2025" "MyWallet Toolkit 2.0" "User Commands"
+.SH NAME
+keyauth-secure \- production-hardened authentication for Bitcoin private keys
+.SH SYNOPSIS
+.B keyauth-secure.sh
+.RB [ \-q ]
+.RB [ \-v ]
+.RB [ \-l
+.IR label ]
+.RB [ \-c ]
+.RB [ \-t
+.IR timeout ]
+.RB [ \-h ]
+.RI [ command
+.RI [ args... ]]
+.SH DESCRIPTION
+.B keyauth-secure.sh
+provides production-hardened authentication for Bitcoin private keys, similar to how sudo works for system privileges. It implements comprehensive security controls including defense-in-depth protection, input validation, and secure session management.
+
+The authentication system ensures private keys never appear in command line arguments, shell history, or process lists. Keys are stored securely in memory with automatic timeout and proper cleanup on exit.
+
+.B PRODUCTION SECURITY FEATURES:
+.IP \(bu 4
+Defense in depth with multiple security layers
+.IP \(bu 4
+Comprehensive input validation and sanitization
+.IP \(bu 4
+Race condition prevention with atomic operations
+.IP \(bu 4
+Memory protection and secure cleanup
+.IP \(bu 4
+Path traversal and injection attack prevention
+.IP \(bu 4
+Privilege isolation and capability dropping
+.IP \(bu 4
+Resource limits to prevent DoS attacks
+.IP \(bu 4
+Environment variable security monitoring
+
+.SH OPTIONS
+.TP
+.B \-q
+Quiet mode. Suppress informational output.
+.TP
+.B \-v
+Verbose mode. Show detailed operations and security checks.
+.TP
+.B \-l \fIlabel\fR
+Key label/identifier for keyring storage (default: "default", alphanumeric only, max 64 characters)
+.TP
+.B \-c
+Check/validate authentication status only. Don't run command. Exit code 0 if authenticated, 1 if not.
+.TP
+.B \-t \fItimeout\fR
+Timeout in seconds for key storage (1-300, default: 60)
+.TP
+.B \-h
+Show help message and exit.
+
+.SH USAGE PATTERNS
+.SS Method 1: Authenticate and Execute (Recommended)
+.B keyauth-secure.sh
+.I command
+.RI [ args... ]
+
+This method authenticates the user and immediately executes the specified command with access to the cached private key. Most secure approach.
+
+.SS Method 2: Separate Authentication
+.nf
+.B keyauth-secure.sh
+.I # Authenticate (prompts for private key)
+.B command
+.RI [ args... ]
+.I # Command runs with cached key access
+.fi
+
+This method allows multiple commands to use the same cached authentication within the timeout period.
+
+.SH SECURITY WORKFLOW
+.IP 1. 4
+Check if private key is already cached and valid
+.IP 2. 4
+If not cached, prompt for private key using secure input (no echo)
+.IP 3. 4
+Validate private key format (64 hexadecimal characters)
+.IP 4. 4
+Store key in secure keyring with specified timeout
+.IP 5. 4
+Execute requested command with authenticated environment
+.IP 6. 4
+Key automatically expires after timeout period
+
+.SH AUTHENTICATION ENVIRONMENT
+When a command is executed with authentication, these environment variables are set:
+.TP
+.B BITCOIN_KEYRING_LABEL
+The label used for key storage
+.TP
+.B BITCOIN_KEYRING_ACTIVE
+Set to "1" to indicate authenticated context
+.TP
+.B BITCOIN_SESSION_ID
+Unique session identifier
+
+.SH EXAMPLES
+.TP
+Authenticate and send Bitcoin in one command:
+.B keyauth-secure.sh send-secure.sh from_addr to_addr 50000
+.TP
+Check authentication status:
+.B keyauth-secure.sh -c
+.TP
+Authenticate with custom label and timeout:
+.B keyauth-secure.sh -l wallet1 -t 120
+.TP
+Verbose authentication check:
+.B keyauth-secure.sh -v -c
+.TP
+Execute multiple commands with one authentication:
+.nf
+.B keyauth-secure.sh -t 300
+.I # Authenticate once for 5 minutes
+.B send-secure.sh from1 to1 10000
+.B send-secure.sh from2 to2 20000
+.fi
+
+.SH INPUT VALIDATION
+All inputs undergo comprehensive security validation:
+.SS Label Validation
+.IP \(bu 4
+Maximum length: 64 characters
+.IP \(bu 4
+Allowed characters: alphanumeric, underscore, hyphen
+.IP \(bu 4
+No path traversal characters or special symbols
+
+.SS Command Validation
+.IP \(bu 4
+Maximum command length: 1024 characters
+.IP \(bu 4
+Path validation for executable commands
+.IP \(bu 4
+Argument sanitization to prevent injection attacks
+.IP \(bu 4
+Executable permission verification
+
+.SS Environment Security
+.IP \(bu 4
+Detection of suspicious environment variables (LD_PRELOAD, etc.)
+.IP \(bu 4
+Validation of PATH directories
+.IP \(bu 4
+Resource limit enforcement (ulimit)
+.IP \(bu 4
+Running as root prevention
+
+.SH SECURITY ARCHITECTURE
+.SS Defense in Depth
+Multiple security layers provide comprehensive protection:
+.IP \(bu 4
+Input validation at multiple points
+.IP \(bu 4
+Resource limits to prevent DoS
+.IP \(bu 4
+Process isolation with controlled environment
+.IP \(bu 4
+Secure cleanup on exit/signal
+.IP \(bu 4
+Memory protection and clearing
+
+.SS Attack Prevention
+Protection against common attack vectors:
+.IP \(bu 4
+Command injection through argument validation
+.IP \(bu 4
+Path traversal through strict path checking
+.IP \(bu 4
+Buffer overflow through length limits
+.IP \(bu 4
+Race conditions through atomic operations
+.IP \(bu 4
+Privilege escalation through security checks
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful authentication and command execution
+.TP
+.B 1
+Authentication failed, invalid input, security violation, or command error
+
+.SH FILES
+.TP
+.I keyring-secure.sh
+Required secure keyring daemon for private key storage
+
+.SH ENVIRONMENT
+.TP
+.B BITCOIN_SESSION_ID
+Session identifier (auto-generated if not set)
+
+.SH SECURITY CONSIDERATIONS
+.IP \(bu 4
+Private keys never appear in command line arguments or shell history
+.IP \(bu 4
+Secure prompting with hidden input (no echo)
+.IP \(bu 4
+Automatic timeout prevents long-term exposure
+.IP \(bu 4
+Comprehensive input validation prevents injection attacks
+.IP \(bu 4
+Multiple security layers provide defense in depth
+.IP \(bu 4
+Production-hardened for enterprise environments
+
+.SH INTEGRATION
+This secure authentication system integrates with:
+.IP \(bu 4
+.BR keyring-secure (1)
+for private key storage
+.IP \(bu 4
+.BR send-secure (1)
+for secure Bitcoin transactions
+.IP \(bu 4
+Any script requiring private key access in the toolkit
+
+.SH COMPARISON WITH SUDO
+Like sudo for system administration, keyauth-secure provides:
+.IP \(bu 4
+Secure authentication with timeout
+.IP \(bu 4
+Session caching to avoid repeated prompts
+.IP \(bu 4
+Comprehensive security controls
+.IP \(bu 4
+Audit trail and logging capabilities
+.IP \(bu 4
+Protection against unauthorized access
+
+.SH SEE ALSO
+.BR keyring-secure (1),
+.BR send-secure (1),
+.BR balance (1),
+.BR network (1),
+.BR sudo (8)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written for the MyWallet Toolkit project with production-grade security enhancements.
+
+.SH COPYRIGHT
+This is free software with production security features; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
