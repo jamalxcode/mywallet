@@ -1,0 +1,231 @@
+.TH KEYAUTH 1 "September 2025" "MyWallet Toolkit 2.0" "User Commands"
+.SH NAME
+keyauth \- Bitcoin private key authentication manager (sudo-like for Bitcoin keys)
+.SH SYNOPSIS
+.B keyauth.sh
+.RB [ \-q ]
+.RB [ \-v ]
+.RB [ \-l 
+.IR label ]
+.RB [ \-c ]
+.RB [ \-h ]
+[\fICOMMAND\fR [\fIARGS\fR...]]
+.SH DESCRIPTION
+.B keyauth.sh
+provides secure authentication and temporary storage for Bitcoin private keys, similar to how sudo works for system privileges. It allows users to authenticate once with their private key and then execute multiple commands without re-entering the key, while maintaining security through timeouts and secure memory storage.
+
+The tool prompts for private keys securely (without command-line exposure), stores them temporarily in secure memory, and provides access to other scripts in the toolkit that need private key operations.
+
+.B WARNING:
+This tool is designed for educational and testing purposes only. Never use this script for production Bitcoin wallets or real funds. For actual Bitcoin storage, always use hardware wallets or certified software solutions.
+
+.SH OPTIONS
+.TP
+.B \-q
+Quiet mode. Suppress informational output and warnings.
+.TP
+.B \-v
+Verbose mode. Show detailed operations and status information.
+.TP
+.B \-l \fIlabel\fR
+Specify a key label/identifier for managing multiple keys. Default is "default".
+.TP
+.B \-c
+Check/validate authentication only. Returns success if already authenticated within timeout period.
+.TP
+.B \-h
+Show help message and exit.
+
+.SH EXAMPLES
+.TP
+Authenticate with default key:
+.nf
+./keyauth.sh
+.fi
+
+.TP
+Check if already authenticated:
+.nf
+./keyauth.sh -c
+echo $?  # 0 if authenticated, 1 if not
+.fi
+
+.TP
+Authenticate and execute send command:
+.nf
+./keyauth.sh send.sh tb1qfrom... tb1qto... 50000
+.fi
+
+.TP
+Use specific key label:
+.nf
+./keyauth.sh -l wallet1 send.sh tb1qfrom... tb1qto... 50000
+.fi
+
+.TP
+Verbose authentication for debugging:
+.nf
+./keyauth.sh -v send.sh tb1qfrom... tb1qto... 50000
+.fi
+
+.SH WORKFLOW
+The authentication process follows these steps:
+
+.IP 1. 4
+.B Check existing authentication
+- Verify if key is already cached within timeout period
+- Return immediately if valid authentication exists
+
+.IP 2. 4
+.B Secure key prompt
+- Prompt for private key with hidden input (no echo)
+- Validate key format and secp256k1 compliance
+- Never expose key in command line or process list
+
+.IP 3. 4
+.B Secure storage
+- Store key in secure memory (tmpfs when available)
+- Set 60-second timeout with automatic cleanup
+- Implement process isolation and secure permissions
+
+.IP 4. 4
+.B Command execution
+- Execute requested command with key access available
+- Commands can retrieve key via keyring.sh interface
+- Maintain security throughout execution
+
+.IP 5. 4
+.B Automatic cleanup
+- Clear keys from memory on timeout
+- Secure cleanup on process termination
+- Handle interruption signals properly
+
+.SH SECURITY FEATURES
+.SS Input Security
+.IP \(bu 4
+Private keys never appear in command line arguments
+.IP \(bu 4
+Secure password-style prompting with hidden input
+.IP \(bu 4
+Input validation and secp256k1 compliance checking
+
+.SS Storage Security
+.IP \(bu 4
+Memory-only storage using tmpfs when available
+.IP \(bu 4
+Secure file permissions (600) on temporary files
+.IP \(bu 4
+Process isolation and controlled environment
+
+.SS Session Management
+.IP \(bu 4
+60-second timeout with automatic key expiration
+.IP \(bu 4
+Session isolation per user and process
+.IP \(bu 4
+Secure cleanup on normal and abnormal termination
+
+.SH KEY MANAGEMENT
+.TP
+.B Multiple Keys
+Use the \fB-l\fR option to manage multiple private keys with different labels:
+.RS
+.nf
+keyauth.sh -l wallet1    # Authenticate with wallet1 key
+keyauth.sh -l wallet2    # Authenticate with wallet2 key
+keyauth.sh -l cold       # Authenticate with cold storage key
+.fi
+.RE
+
+.TP
+.B Session Status
+Check authentication status without prompting:
+.nf
+if keyauth.sh -c; then
+    echo "Authenticated"
+    send.sh tb1qfrom... tb1qto... 50000
+else
+    echo "Need authentication"
+    keyauth.sh send.sh tb1qfrom... tb1qto... 50000
+fi
+.fi
+
+.SH INTEGRATION
+.TP
+.B With Other Tools
+Other toolkit scripts can retrieve the authenticated key:
+.RS
+.nf
+# After authentication
+keyauth.sh -l wallet1
+
+# Other scripts can access the key
+keyring.sh -a get -l wallet1
+public_key.sh -f compressed < <(keyring.sh -a get -l wallet1)
+.fi
+.RE
+
+.SH DEPENDENCIES
+.TP
+.B keyring.sh
+Required for secure key storage and retrieval
+.TP
+.B openssl
+Required for key validation and cryptographic operations
+.TP
+.B xxd
+Required for hexadecimal validation
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful authentication or command execution
+.TP
+.B 1
+Authentication failed, invalid key, or command execution error
+.TP
+.B 2
+Timeout or user cancellation
+.TP
+.B 130
+Interrupted by signal (Ctrl+C)
+
+.SH FILES
+.TP
+.I /dev/shm/
+Preferred location for secure temporary key storage (Linux)
+.TP
+.I /tmp/
+Fallback location for temporary files with secure permissions
+
+.SH ENVIRONMENT
+.TP
+.B TMPDIR
+Alternative directory for temporary files if /dev/shm unavailable
+
+.SH SECURITY CONSIDERATIONS
+.IP \(bu 4
+Never use for production Bitcoin wallets
+.IP \(bu 4
+Keys are stored temporarily in memory/tmpfs
+.IP \(bu 4
+60-second timeout minimizes exposure window
+.IP \(bu 4
+Secure cleanup prevents key recovery from memory
+.IP \(bu 4
+Process isolation limits access to other processes
+
+.SH SEE ALSO
+.BR keyring (1),
+.BR keyauth-secure (1),
+.BR send (1),
+.BR public_key (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

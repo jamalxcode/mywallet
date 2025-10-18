@@ -1,0 +1,308 @@
+.TH SEND 1 "September 2025" "MyWallet Toolkit 2.0" "User Commands"
+.SH NAME
+send \- Bitcoin transaction sender with keyring authentication
+.SH SYNOPSIS
+.B send.sh
+.RB [ \-q ]
+.RB [ \-v ]
+.RB [ \-n 
+.IR network ]
+.RB [ \-f 
+.IR fee_rate ]
+.RB [ \-d ]
+.RB [ \-b 
+.IR 0 | 1 ]
+.RB [ \-l 
+.IR label ]
+.RB [ \-h ]
+.I from_address
+.I to_address
+.I amount_sat
+.SH DESCRIPTION
+.B send.sh
+creates and broadcasts Bitcoin transactions using authenticated private keys from the keyring system. It provides a secure method for spending Bitcoin by requiring prior authentication through keyauth.sh, ensuring private keys never appear in command-line arguments or process lists.
+
+The tool handles UTXO selection, fee calculation, transaction signing, and optional broadcasting to the Bitcoin network. It supports both mainnet and testnet operations with comprehensive validation and error handling.
+
+.B WARNING:
+This tool is designed for educational and testing purposes only. Never use this script for production Bitcoin wallets or real funds. For actual Bitcoin storage and transactions, always use hardware wallets or certified software solutions.
+
+.SH OPTIONS
+.TP
+.B \-q
+Quiet mode. Suppress warnings and progress information.
+.TP
+.B \-v
+Verbose mode. Show detailed transaction creation and broadcast process.
+.TP
+.B \-n \fInetwork\fR
+Specify Bitcoin network. Supported values:
+.RS
+.IP \(bu 4
+.B mainnet
+- Bitcoin main network
+.IP \(bu 4
+.B testnet
+- Bitcoin test network
+.RE
+If not specified, auto-detects from network.sh configuration.
+.TP
+.B \-f \fIfee_rate\fR
+Fee rate in satoshis per byte. Default is 10 sat/byte.
+.TP
+.B \-d
+Dry run mode. Create and display transaction but do not broadcast to network.
+.TP
+.B \-b \fI0|1\fR
+Broadcast transaction to network. 1=yes (default), 0=no. Automatically disabled in dry-run mode.
+.TP
+.B \-l \fIlabel\fR
+Key label for keyring access. Default is "default". Must match the label used during authentication.
+.TP
+.B \-h
+Show help message and exit.
+
+.SH ARGUMENTS
+.TP
+.B from_address
+Source Bitcoin address. Must match the address derived from the authenticated private key.
+.TP
+.B to_address
+Destination Bitcoin address in any supported format (P2PKH, P2SH, P2WPKH, P2WSH).
+.TP
+.B amount_sat
+Amount to send in satoshis (1 BTC = 100,000,000 satoshis).
+
+.SH EXAMPLES
+.TP
+Secure transaction with prior authentication:
+.nf
+# First authenticate
+keyauth.sh
+
+# Then send transaction
+./send.sh tb1qfrom... tb1qto... 50000
+.fi
+
+.TP
+One-command secure transaction:
+.nf
+keyauth.sh send.sh tb1qfrom... tb1qto... 50000
+.fi
+
+.TP
+Dry run with custom fee rate:
+.nf
+./send.sh -d -f 20 tb1qfrom... tb1qto... 100000
+.fi
+
+.TP
+Verbose testnet transaction:
+.nf
+keyauth.sh send.sh -v -n testnet tb1qfrom... tb1qto... 25000
+.fi
+
+.TP
+Using specific key label:
+.nf
+keyauth.sh -l wallet1 send.sh -l wallet1 1ABC... 1XYZ... 75000
+.fi
+
+.SH TRANSACTION PROCESS
+.SS 1. Authentication Verification
+.IP \(bu 4
+Verify keyring authentication is active
+.IP \(bu 4
+Retrieve private key for specified label
+.IP \(bu 4
+Validate private key against from_address
+
+.SS 2. Input Validation
+.IP \(bu 4
+Validate Bitcoin addresses format and network compatibility
+.IP \(bu 4
+Verify amount is positive and reasonable
+.IP \(bu 4
+Check fee rate is within acceptable bounds
+
+.SS 3. UTXO Management
+.IP \(bu 4
+Fetch available UTXOs for from_address
+.IP \(bu 4
+Select UTXOs using largest-first algorithm
+.IP \(bu 4
+Calculate required inputs to cover amount + fees
+
+.SS 4. Transaction Construction
+.IP \(bu 4
+Create transaction inputs from selected UTXOs
+.IP \(bu 4
+Add output for recipient address and amount
+.IP \(bu 4
+Calculate and add change output if necessary
+.IP \(bu 4
+Estimate transaction size and fees
+
+.SS 5. Transaction Signing
+.IP \(bu 4
+Sign transaction inputs with private key
+.IP \(bu 4
+Generate scriptSigs or witness data
+.IP \(bu 4
+Validate transaction integrity
+
+.SS 6. Broadcasting (if enabled)
+.IP \(bu 4
+Broadcast signed transaction to Bitcoin network
+.IP \(bu 4
+Return transaction ID for tracking
+.IP \(bu 4
+Provide network confirmation information
+
+.SH SECURITY REQUIREMENTS
+.TP
+.B Authentication Required
+This tool requires prior authentication with keyauth.sh:
+.nf
+# Method 1 (Recommended)
+keyauth.sh send.sh from_addr to_addr amount
+
+# Method 2 (Manual)
+keyauth.sh                    # Authenticate first
+send.sh from_addr to_addr amount  # Then send
+.fi
+
+.TP
+.B Private Key Security
+.IP \(bu 4
+Private keys never appear in command-line arguments
+.IP \(bu 4
+Keys retrieved securely from keyring system
+.IP \(bu 4
+Automatic timeout and cleanup after 60 seconds
+.IP \(bu 4
+Session isolation prevents unauthorized access
+
+.SH NETWORK DETECTION
+The tool automatically detects the Bitcoin network from:
+.IP 1. 4
+Command-line \fB-n\fR option (highest priority)
+.IP 2. 4
+Configuration from network.sh
+.IP 3. 4
+Address format analysis (fallback)
+
+Network compatibility is validated for all addresses and operations.
+
+.SH FEE CALCULATION
+.TP
+.B Fee Estimation
+.IP \(bu 4
+Estimates transaction size based on input/output types
+.IP \(bu 4
+Calculates fees as: size_bytes × fee_rate_sat_per_byte
+.IP \(bu 4
+Adds appropriate safety margins
+.IP \(bu 4
+Validates total fees are reasonable
+
+.TP
+.B Change Handling
+.IP \(bu 4
+Creates change output when input > output + fees
+.IP \(bu 4
+Dust threshold protection (546 satoshis minimum)
+.IP \(bu 4
+Change sent back to from_address
+
+.SH DEPENDENCIES
+.TP
+.B keyring.sh
+Required for secure private key retrieval
+.TP
+.B network.sh
+Required for network configuration
+.TP
+.B balance.sh
+Required for UTXO fetching
+.TP
+.B openssl
+Required for transaction signing
+.TP
+.B curl
+Required for blockchain API communication
+.TP
+.B jq
+Required for JSON processing
+
+.SH EXIT STATUS
+.TP
+.B 0
+Transaction created and broadcast successfully
+.TP
+.B 1
+Authentication failed or not available
+.TP
+.B 2
+Invalid arguments or addresses
+.TP
+.B 3
+Insufficient funds or UTXO errors
+.TP
+.B 4
+Transaction creation or signing failed
+.TP
+.B 5
+Broadcasting failed (network error)
+
+.SH FILES
+.TP
+.I ~/.bitcoin-toolkit-config
+Network configuration file
+
+.SH ENVIRONMENT
+.TP
+.B BITCOIN_NETWORK
+Network override (mainnet/testnet)
+.TP
+.B BITCOIN_SESSION_ID
+Session identifier for keyring isolation
+
+.SH LIMITATIONS
+.TP
+.B Educational Use Only
+.IP \(bu 4
+Simplified UTXO selection (largest-first)
+.IP \(bu 4
+Basic fee estimation
+.IP \(bu 4
+Limited transaction types
+.IP \(bu 4
+No RBF (Replace-By-Fee) support
+
+.TP
+.B Production Alternatives
+For real Bitcoin transactions, use:
+.IP \(bu 4
+Hardware wallets (Ledger, Trezor)
+.IP \(bu 4
+Bitcoin Core with proper key management
+.IP \(bu 4
+Established libraries (bitcoinjs-lib, libbitcoin)
+
+.SH SEE ALSO
+.BR keyauth (1),
+.BR keyring (1),
+.BR balance (1),
+.BR network (1),
+.BR send-secure (1),
+.BR send-unsafe (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

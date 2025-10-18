@@ -80,7 +80,8 @@ check_dependencies() {
     [[ ${#missing[@]} -gt 0 ]] && die "Missing required commands: ${missing[*]}"
     
     # Check BIP39 wordlist
-    local wordlist="./english.txt"
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    local wordlist="$script_dir/english.txt"
     [[ ! -f "$wordlist" ]] && die "BIP39 wordlist not found at $wordlist"
     echo "$wordlist"
 }

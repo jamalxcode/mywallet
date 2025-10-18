@@ -2,7 +2,8 @@
 # or: #!/usr/bin/env bash
 
 # Allow override of wordlist file via env or arg
-WORDLIST_FILE="${1:-${WORDLIST_FILE:-english.txt}}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+WORDLIST_FILE="${1:-${WORDLIST_FILE:-$SCRIPT_DIR/english.txt}}"
 
 # Check that the wordlist exists
 if [ ! -f "$WORDLIST_FILE" ]; then

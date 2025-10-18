@@ -1,0 +1,300 @@
+.TH KEYRING 1 "September 2025" "MyWallet Toolkit 2.0" "User Commands"
+.SH NAME
+keyring \- secure Bitcoin private key storage daemon (sudo-like key management)
+.SH SYNOPSIS
+.B keyring.sh
+.RB [ \-q ]
+.RB [ \-v ]
+.RB [ \-a 
+.IR action ]
+.RB [ \-l 
+.IR label ]
+.RB [ \-h ]
+.SH DESCRIPTION
+.B keyring.sh
+provides secure, temporary storage for Bitcoin private keys in memory, similar to how sudo caches credentials. It implements a daemon-like system that stores private keys securely with automatic timeout and cleanup, allowing other scripts in the toolkit to access keys without repeated prompting.
+
+The keyring system uses process isolation, secure memory storage, and automatic expiration to minimize the exposure window of private key material while providing convenient access for legitimate operations.
+
+.B WARNING:
+This tool is designed for educational and testing purposes only. Never use this script for production Bitcoin wallets or real funds. For actual Bitcoin storage, always use hardware wallets or certified software solutions.
+
+.SH OPTIONS
+.TP
+.B \-q
+Quiet mode. Suppress informational output and warnings.
+.TP
+.B \-v
+Verbose mode. Show detailed operations and daemon status.
+.TP
+.B \-a \fIaction\fR
+Specify the keyring action to perform. Supported actions:
+.RS
+.IP \(bu 4
+.B status
+- Show keyring daemon status (default)
+.IP \(bu 4
+.B auth
+- Authenticate and store private key in memory
+.IP \(bu 4
+.B get
+- Retrieve stored private key (for scripts)
+.IP \(bu 4
+.B clear
+- Clear stored keys and reset timeout
+.IP \(bu 4
+.B kill
+- Stop keyring daemon entirely
+.RE
+.TP
+.B \-l \fIlabel\fR
+Specify key label/identifier for managing multiple keys. Default is "default".
+.TP
+.B \-h
+Show help message and exit.
+
+.SH EXAMPLES
+.TP
+Check keyring status:
+.nf
+./keyring.sh -a status
+.fi
+
+.TP
+Authenticate and store private key:
+.nf
+./keyring.sh -a auth
+# Prompts securely for private key
+.fi
+
+.TP
+Retrieve stored key (for scripts):
+.nf
+PRIVATE_KEY=$(./keyring.sh -a get)
+echo "$PRIVATE_KEY" | ./public_key.sh -f compressed
+.fi
+
+.TP
+Manage multiple keys with labels:
+.nf
+./keyring.sh -a auth -l wallet1
+./keyring.sh -a auth -l wallet2
+./keyring.sh -a get -l wallet1
+.fi
+
+.TP
+Clear cached keys before timeout:
+.nf
+./keyring.sh -a clear
+.fi
+
+.TP
+Stop keyring daemon:
+.nf
+./keyring.sh -a kill
+.fi
+
+.SH ACTIONS
+.SS status
+Shows the current status of the keyring daemon including:
+.IP \(bu 4
+Daemon running state
+.IP \(bu 4
+Number of stored keys
+.IP \(bu 4
+Time remaining until expiration
+.IP \(bu 4
+Session information
+
+.SS auth
+Prompts for a private key and stores it securely:
+.IP \(bu 4
+Secure password-style prompting (no echo)
+.IP \(bu 4
+Private key validation
+.IP \(bu 4
+60-second timeout activation
+.IP \(bu 4
+Automatic daemon startup if needed
+
+.SS get
+Retrieves a previously stored private key:
+.IP \(bu 4
+Returns the raw private key in hexadecimal
+.IP \(bu 4
+Fails if no key is stored or timeout expired
+.IP \(bu 4
+Primarily used by other toolkit scripts
+
+.SS clear
+Immediately clears all stored keys:
+.IP \(bu 4
+Removes all keys from memory
+.IP \(bu 4
+Resets timeout period
+.IP \(bu 4
+Maintains daemon for future use
+
+.SS kill
+Terminates the keyring daemon entirely:
+.IP \(bu 4
+Stops background daemon process
+.IP \(bu 4
+Clears all temporary files
+.IP \(bu 4
+Secure cleanup of memory contents
+
+.SH SECURITY ARCHITECTURE
+.SS Memory Storage
+.IP \(bu 4
+Keys stored in tmpfs (/dev/shm) when available
+.IP \(bu 4
+Fallback to /tmp with secure permissions (600)
+.IP \(bu 4
+Process isolation prevents external access
+.IP \(bu 4
+Automatic cleanup on process termination
+
+.SS Timeout Management
+.IP \(bu 4
+60-second automatic expiration
+.IP \(bu 4
+Background cleanup process
+.IP \(bu 4
+Signal handling for graceful shutdown
+.IP \(bu 4
+Session-based isolation
+
+.SS Process Security
+.IP \(bu 4
+Daemon runs with minimal privileges
+.IP \(bu 4
+Socket-based communication
+.IP \(bu 4
+PID file management
+.IP \(bu 4
+Resource cleanup on exit
+
+.SH INTEGRATION
+.TP
+.B With keyauth.sh
+The keyring is typically managed through keyauth.sh:
+.nf
+keyauth.sh                    # Authenticates via keyring
+keyauth.sh -c                 # Check status via keyring
+.fi
+
+.TP
+.B Direct Script Access
+Scripts can access keys directly:
+.nf
+# Check if key available
+if keyring.sh -a status >/dev/null 2>&1; then
+    PRIVATE_KEY=$(keyring.sh -a get)
+    # Use private key
+else
+    echo "Authentication required"
+fi
+.fi
+
+.SH DAEMON LIFECYCLE
+.SS Startup
+.IP 1. 4
+Daemon automatically starts on first auth request
+.IP 2. 4
+Creates secure temporary directory
+.IP 3. 4
+Initializes socket communication
+.IP 4. 4
+Sets up signal handlers and cleanup
+
+.SS Operation
+.IP 1. 4
+Accepts key storage and retrieval requests
+.IP 2. 4
+Maintains timeout counters
+.IP 3. 4
+Validates session access
+.IP 4. 4
+Performs background cleanup
+
+.SS Termination
+.IP 1. 4
+Automatic timeout after 60 seconds of inactivity
+.IP 2. 4
+Manual termination via kill action
+.IP 3. 4
+Secure memory clearing
+.IP 4. 4
+Cleanup of temporary files
+
+.SH DEPENDENCIES
+.TP
+.B openssl
+Required for key validation and cryptographic operations
+.TP
+.B xxd
+Required for hexadecimal processing
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful operation
+.TP
+.B 1
+Operation failed, invalid key, or daemon error
+.TP
+.B 2
+Timeout or authentication required
+.TP
+.B 3
+Daemon not running or unavailable
+
+.SH FILES
+.TP
+.I /dev/shm/
+Preferred location for secure temporary storage (Linux)
+.TP
+.I /tmp/.bitcoin-keyring-*
+Temporary keyring directories with secure permissions
+.TP
+.I keyring.sock
+Unix domain socket for daemon communication
+.TP
+.I keyring.pid
+Process ID file for daemon management
+
+.SH ENVIRONMENT
+.TP
+.B BITCOIN_SESSION_ID
+Session identifier for isolating multiple instances
+.TP
+.B TMPDIR
+Alternative directory for temporary files
+
+.SH SECURITY CONSIDERATIONS
+.IP \(bu 4
+Never use for production Bitcoin wallets
+.IP \(bu 4
+Keys are cleared from memory after 60 seconds
+.IP \(bu 4
+Secure permissions prevent other user access
+.IP \(bu 4
+Signal handlers ensure cleanup on interruption
+.IP \(bu 4
+Session isolation prevents cross-contamination
+
+.SH SEE ALSO
+.BR keyauth (1),
+.BR keyring-secure (1),
+.BR send (1),
+.BR public_key (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.

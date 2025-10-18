@@ -1,0 +1,187 @@
+.TH ADDRESS 1 "September 2025" "MyWallet Toolkit 2.0" "User Commands"
+.SH NAME
+address \- Bitcoin address generator from public keys
+.SH SYNOPSIS
+.B address.sh
+.RB [ \-q ]
+.RB [ \-v ]
+.RB [ \-n 
+.IR network ]
+.RB [ \-t 
+.IR type ]
+.RB [ \-h ]
+[\fIPUBLIC_KEY_HEX\fR]
+.SH DESCRIPTION
+.B address.sh
+generates Bitcoin addresses from public keys in various formats. It supports both compressed and uncompressed public keys and can generate different types of Bitcoin addresses including legacy, SegWit, and Pay-to-Script-Hash formats for both mainnet and testnet networks.
+
+The tool accepts public keys in hexadecimal format and outputs properly formatted Bitcoin addresses according to the specified address type and network.
+
+.B WARNING:
+This tool is designed for educational and testing purposes only. Never use this script for production Bitcoin wallets or real funds. For actual Bitcoin storage, always use hardware wallets or certified software solutions.
+
+.SH OPTIONS
+.TP
+.B \-q
+Quiet mode. Suppress warnings and informational output.
+.TP
+.B \-v
+Verbose mode. Show progress and processing steps.
+.TP
+.B \-n \fInetwork\fR
+Specify the Bitcoin network. Supported values:
+.RS
+.IP \(bu 4
+.B mainnet
+- Bitcoin main network (default)
+.IP \(bu 4
+.B testnet
+- Bitcoin test network
+.RE
+.TP
+.B \-t \fItype\fR
+Specify the address type. Supported values:
+.RS
+.IP \(bu 4
+.B p2pkh
+- Pay to Public Key Hash (legacy, default)
+.IP \(bu 4
+.B p2sh
+- Pay to Script Hash
+.IP \(bu 4
+.B p2wpkh
+- Pay to Witness Public Key Hash (SegWit)
+.IP \(bu 4
+.B p2wsh
+- Pay to Witness Script Hash (SegWit)
+.RE
+.TP
+.B \-h
+Show help message and exit.
+
+.SH EXAMPLES
+.TP
+Generate P2PKH address from public key:
+.nf
+echo '02a1b2c3d4e5f678901234567890123456...' | ./address.sh
+.fi
+
+.TP
+Generate testnet SegWit address:
+.nf
+./address.sh -n testnet -t p2wpkh 02a1b2c3d4e5f678901234567890123456...
+.fi
+
+.TP
+Complete pipeline from private key to address:
+.nf
+echo "private_key_hex" | ./public_key.sh -q -f compressed | ./address.sh -q -n testnet -t p2wpkh
+.fi
+
+.TP
+Verbose mode with processing details:
+.nf
+echo '03a1b2c3...' | ./address.sh -v -n mainnet -t p2pkh
+.fi
+
+.SH OUTPUT
+The tool outputs a properly formatted Bitcoin address according to the specified type and network:
+
+.TP
+.B P2PKH addresses
+Start with '1' on mainnet, 'm' or 'n' on testnet
+.br
+Example: 1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa
+
+.TP
+.B P2SH addresses
+Start with '3' on mainnet, '2' on testnet
+.br
+Example: 3J98t1WpEZ73CNmQviecrnyiWrnqRhWNLy
+
+.TP
+.B P2WPKH addresses (SegWit)
+Use bech32 encoding with 'bc1' prefix on mainnet, 'tb1' on testnet
+.br
+Example: bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4
+
+.TP
+.B P2WSH addresses (SegWit)
+Use bech32 encoding with 'bc1' prefix on mainnet, 'tb1' on testnet
+.br
+Example: bc1qrp33g5q4c8s...
+
+.SH INPUT FORMAT
+.TP
+.B Public Key Format
+The tool accepts public keys in hexadecimal format:
+.IP \(bu 4
+.B Compressed
+33 bytes (66 hex characters) starting with 02 or 03
+.IP \(bu 4
+.B Uncompressed
+65 bytes (130 hex characters) starting with 04
+
+.SH TECHNICAL DETAILS
+.SS Address Generation Process
+.IP 1. 4
+Validate input public key format and length
+.IP 2. 4
+Perform network-specific address encoding
+.IP 3. 4
+Apply address type-specific formatting
+.IP 4. 4
+Generate checksum and encode final address
+
+.SS Encoding Standards
+.IP \(bu 4
+.B Base58Check
+Used for P2PKH and P2SH addresses
+.IP \(bu 4
+.B Bech32
+Used for SegWit addresses (P2WPKH, P2WSH)
+
+.SH DEPENDENCIES
+.TP
+.B openssl
+Required for hash calculations
+.TP
+.B xxd
+Required for hexadecimal conversions
+.TP
+.B bc
+Required for mathematical operations
+
+.SH EXIT STATUS
+.TP
+.B 0
+Successful execution
+.TP
+.B 1
+Invalid arguments, malformed input, or execution error
+
+.SH STANDARDS
+.TP
+.B BIP 13
+Base58Check encoding for Pay to Script Hash
+.TP
+.B BIP 173
+Bech32 encoding for SegWit addresses
+.TP
+.B BIP 141
+SegWit transaction format
+
+.SH SEE ALSO
+.BR public_key (1),
+.BR privatekey (1),
+.BR balance (1),
+.BR network (1)
+
+.SH BUGS
+Report bugs to the MyWallet Toolkit project repository.
+
+.SH AUTHOR
+Written by jamalxcode for the MyWallet Toolkit project.
+
+.SH COPYRIGHT
+This is free software; see the source for copying conditions. There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
